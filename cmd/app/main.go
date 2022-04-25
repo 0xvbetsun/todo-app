@@ -1,19 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"github.com/vbetsun/todo-app/internal/repository"
 	"github.com/vbetsun/todo-app/internal/service"
 	"github.com/vbetsun/todo-app/internal/transport/rest"
 	"github.com/vbetsun/todo-app/internal/transport/rest/handler"
+	"go.uber.org/zap"
 )
 
 func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v", err)
+	}
+	defer logger.Sync()
 	if err := initConfig(); err != nil {
-		log.Fatalf("Can not read config %s", err.Error())
+		logger.Fatal(fmt.Sprintf("can't read config: %v", err))
 	}
 	db, err := repository.NewPostgres(repository.Config{
 		Host:     viper.GetString("db.host"),
@@ -22,9 +28,10 @@ func main() {
 		DBName:   viper.GetString("db.dbname"),
 		Password: viper.GetString("POSTGRES_PASSWORD"),
 		SSLMode:  viper.GetString("db.sslmode"),
+		Logger:   logger,
 	})
 	if err != nil {
-		log.Fatalf("Can not connect to the DB %s", err.Error())
+		logger.Fatal(fmt.Sprintf("can't connect to the DB %v", err))
 	}
 	repo := repository.NewRepository(db)
 	service := service.NewService(repo)
@@ -32,9 +39,9 @@ func main() {
 	srv := new(rest.Server)
 	port := viper.GetString("port")
 
-	log.Printf("Server is starting on port %s", port)
+	logger.Info("Server is starting on port: " + port)
 	if err := srv.Run(port, h.InitRoutes()); err != nil {
-		log.Fatalf("Can not start server on port %s, err: %s", port, err.Error())
+		logger.Fatal(fmt.Sprintf("can't start server on port %s, err: %v", port, err))
 	}
 }
 

@@ -3,7 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 	"github.com/vbetsun/todo-app/internal/service"
 )
 
@@ -17,6 +19,10 @@ func NewHandler(service *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *chi.Mux {
 	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
+	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Mount("/auth", h.authRouter())
 	r.Mount("/api", h.apiRouter())
 	return r
@@ -24,8 +30,8 @@ func (h *Handler) InitRoutes() *chi.Mux {
 
 func (h *Handler) authRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Post("/sign-in", signIn)
-	r.Post("/sign-up", signUp)
+	r.Post("/sign-in", h.SignIn)
+	r.Post("/sign-up", h.SignUp)
 	return r
 }
 
