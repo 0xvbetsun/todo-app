@@ -52,6 +52,10 @@ func (sr *SignUpRequest) Bind(r *http.Request) error {
 	return nil
 }
 
+func (rd *SignInResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 func (rd *SignUpResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

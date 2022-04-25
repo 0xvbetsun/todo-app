@@ -24,7 +24,7 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Mount("/auth", h.authRouter())
-	r.Mount("/api", h.apiRouter())
+	r.With(h.UserIdentity).Mount("/api", h.apiRouter())
 	return r
 }
 

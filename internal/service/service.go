@@ -6,8 +6,9 @@ import (
 )
 
 type Authorization interface {
-	CreateUser(domain.User) (int, error)
+	CreateUser(user domain.User) (int, error)
 	GenerateToken(username, password string) (string, error)
+	ParseToken(token string) (int, error)
 }
 type TodoList interface{}
 type TodoItem interface{}

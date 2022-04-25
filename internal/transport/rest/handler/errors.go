@@ -26,13 +26,15 @@ func ErrInvalidRequest(err error) render.Renderer {
 	}
 }
 
-func ErrInternalServer(err error) render.Renderer {
+func ErrUnauthorized(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
-		HTTPStatusCode: 500,
+		HTTPStatusCode: 401,
 		ErrorText:      err.Error(),
 	}
 }
+
+var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, ErrorText: "Resource not found."}
 
 func ErrRender(err error) render.Renderer {
 	return &ErrResponse{
@@ -42,4 +44,10 @@ func ErrRender(err error) render.Renderer {
 	}
 }
 
-var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, ErrorText: "Resource not found."}
+func ErrInternalServer(err error) render.Renderer {
+	return &ErrResponse{
+		Err:            err,
+		HTTPStatusCode: 500,
+		ErrorText:      err.Error(),
+	}
+}
