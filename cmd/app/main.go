@@ -18,7 +18,7 @@ func main() {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
 	defer logger.Sync()
-	if err := initConfig(); err != nil {
+	if err := LoadConfig("configs"); err != nil {
 		logger.Fatal(fmt.Sprintf("can't read config: %v", err))
 	}
 	db, err := repository.NewPostgres(repository.Config{
@@ -45,12 +45,14 @@ func main() {
 	}
 }
 
-func initConfig() error {
-	viper.AddConfigPath("configs")
+func LoadConfig(path string) error {
+	viper.AddConfigPath(path)
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
-	viper.SetConfigFile(".env")
+	viper.AddConfigPath("deployments")
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env")
 	return viper.MergeInConfig()
 }
