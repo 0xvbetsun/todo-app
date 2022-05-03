@@ -35,3 +35,11 @@ func (h *Handler) UserIdentity(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func getUserID(w http.ResponseWriter, r *http.Request) (int, error) {
+	userID, ok := r.Context().Value(userCtx).(int)
+	if !ok {
+		return 0, errors.New("userID not found")
+	}
+	return userID, nil
+}

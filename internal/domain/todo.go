@@ -12,3 +12,8 @@ type TodoItem struct {
 	Description string `json:"description"`
 	Done        bool   `json:"done"`
 }
+
+type UpdateListData struct {
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+}
