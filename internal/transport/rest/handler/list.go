@@ -8,21 +8,33 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/vbetsun/todo-app/internal/domain"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
 const listCtx = "list"
 
+type TodoListService interface {
+	CreateList(userID int, list core.Todolist) (int, error)
+	GetAllLists(userID int) ([]core.Todolist, error)
+	GetListByID(userID, listID int) (core.Todolist, error)
+	UpdateList(listID int, data core.UpdateListData) error
+	DeleteList(listID int) error
+}
+
+type TodoListHandler struct {
+	service TodoListService
+}
+
 type CreateListRequest struct {
-	*domain.Todolist
+	*core.Todolist
 }
 
 type UpdateListRequest struct {
-	*domain.UpdateListData
+	*core.UpdateListData
 }
 
 type AllListsResponse struct {
-	Data []domain.Todolist `json:"data"`
+	Data []core.Todolist `json:"data"`
 }
 
 type CreateListResponse struct {
@@ -30,7 +42,11 @@ type CreateListResponse struct {
 }
 
 type GetListResponse struct {
-	*domain.Todolist
+	*core.Todolist
+}
+
+func NewTodoListHandler(service TodoListService) *TodoListHandler {
+	return &TodoListHandler{service}
 }
 
 func (cl *CreateListRequest) Bind(r *http.Request) error {
@@ -53,7 +69,7 @@ func (cl *CreateListResponse) Render(w http.ResponseWriter, r *http.Request) err
 
 func (al *AllListsResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	if len(al.Data) == 0 {
-		al.Data = make([]domain.Todolist, 0)
+		al.Data = make([]core.Todolist, 0)
 	}
 	return nil
 }
@@ -62,7 +78,7 @@ func (gl *GetListResponse) Render(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) listCtx(next http.Handler) http.Handler {
+func (h *TodoListHandler) listCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, err := getUserID(w, r)
 		if err != nil {
@@ -84,7 +100,7 @@ func (h *Handler) listCtx(next http.Handler) http.Handler {
 	})
 }
 
-func (h *Handler) getAllLists(w http.ResponseWriter, r *http.Request) {
+func (h *TodoListHandler) getAllLists(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(w, r)
 	if err != nil {
 		render.Render(w, r, ErrInternalServer(err))
@@ -98,7 +114,7 @@ func (h *Handler) getAllLists(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &AllListsResponse{Data: lists})
 }
 
-func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
+func (h *TodoListHandler) createList(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(w, r)
 	if err != nil {
 		render.Render(w, r, ErrInternalServer(err))
@@ -118,8 +134,8 @@ func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &CreateListResponse{ID: id})
 }
 
-func (h *Handler) getList(w http.ResponseWriter, r *http.Request) {
-	list, ok := r.Context().Value(listCtx).(domain.Todolist)
+func (h *TodoListHandler) getList(w http.ResponseWriter, r *http.Request) {
+	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
 		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
 		return
@@ -128,8 +144,8 @@ func (h *Handler) getList(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &GetListResponse{Todolist: &list})
 }
 
-func (h *Handler) updateList(w http.ResponseWriter, r *http.Request) {
-	list, ok := r.Context().Value(listCtx).(domain.Todolist)
+func (h *TodoListHandler) updateList(w http.ResponseWriter, r *http.Request) {
+	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
 		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
 		return
@@ -147,8 +163,8 @@ func (h *Handler) updateList(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w, r)
 }
 
-func (h *Handler) deleteList(w http.ResponseWriter, r *http.Request) {
-	list, ok := r.Context().Value(listCtx).(domain.Todolist)
+func (h *TodoListHandler) deleteList(w http.ResponseWriter, r *http.Request) {
+	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
 		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
 		return

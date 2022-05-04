@@ -1,22 +1,22 @@
-package repository
+package psql
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
 
-	"github.com/vbetsun/todo-app/internal/domain"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
-type TodoListPostgres struct {
+type TodoList struct {
 	db *sql.DB
 }
 
-func NewTodoListPostgres(db *sql.DB) *TodoListPostgres {
-	return &TodoListPostgres{db: db}
+func NewTodoList(db *sql.DB) *TodoList {
+	return &TodoList{db}
 }
 
-func (r *TodoListPostgres) CreateList(userID int, l domain.Todolist) (int, error) {
+func (r *TodoList) CreateList(userID int, l core.Todolist) (int, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -33,15 +33,15 @@ func (r *TodoListPostgres) CreateList(userID int, l domain.Todolist) (int, error
 	return id, tx.Commit()
 }
 
-func (r *TodoListPostgres) GetAllLists(userID int) ([]domain.Todolist, error) {
-	var lists []domain.Todolist
+func (r *TodoList) GetAllLists(userID int) ([]core.Todolist, error) {
+	var lists []core.Todolist
 	rows, err := r.db.Query(allListsQuery(), userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var list domain.Todolist
+		var list core.Todolist
 		if err := rows.Scan(&list.ID, &list.Title, &list.Description); err != nil {
 			return nil, err
 		}
@@ -53,19 +53,19 @@ func (r *TodoListPostgres) GetAllLists(userID int) ([]domain.Todolist, error) {
 	return lists, nil
 }
 
-func (r *TodoListPostgres) GetListByID(userID, listID int) (domain.Todolist, error) {
-	var list domain.Todolist
+func (r *TodoList) GetListByID(userID, listID int) (core.Todolist, error) {
+	var list core.Todolist
 	err := r.db.QueryRow(listByIDQuery(), userID, listID).Scan(&list.ID, &list.Title, &list.Description)
 	return list, err
 }
 
-func (r *TodoListPostgres) UpdateList(listID int, data domain.UpdateListData) error {
+func (r *TodoList) UpdateList(listID int, data core.UpdateListData) error {
 	query, args := updateList(listID, data)
 	_, err := r.db.Exec(query, args...)
 	return err
 }
 
-func (r *TodoListPostgres) DeleteList(listID int) error {
+func (r *TodoList) DeleteList(listID int) error {
 	_, err := r.db.Exec(deleteListById(), listID)
 	return err
 }
@@ -103,7 +103,7 @@ func listByIDQuery() string {
 	`, todoListsTable, usersListsTable)
 }
 
-func updateList(listID int, data domain.UpdateListData) (string, []interface{}) {
+func updateList(listID int, data core.UpdateListData) (string, []interface{}) {
 	setValues := make([]string, 0)
 	args := make([]interface{}, 0)
 	argID := 1

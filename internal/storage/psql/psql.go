@@ -1,4 +1,4 @@
-package repository
+package psql
 
 import (
 	"database/sql"
@@ -27,6 +27,12 @@ type Config struct {
 	Logger   *zap.Logger
 }
 
+type Storage struct {
+	Auth     *Auth
+	TodoList *TodoList
+	TodoItem *TodoItem
+}
+
 func (cfg Config) String() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
@@ -39,7 +45,7 @@ func (cfg Config) String() string {
 	)
 }
 
-func NewPostgres(cfg Config) (*sql.DB, error) {
+func NewDB(cfg Config) (*sql.DB, error) {
 	zapadapter.NewLogger(cfg.Logger)
 	db, err := sql.Open("pgx", cfg.String())
 	if err != nil {
@@ -51,4 +57,12 @@ func NewPostgres(cfg Config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{
+		Auth:     NewAuth(db),
+		TodoList: NewTodoList(db),
+		TodoItem: NewTodoItem(db),
+	}
 }

@@ -4,15 +4,26 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/vbetsun/todo-app/internal/service"
 )
 
-type Handler struct {
-	service *service.Service
+type Deps struct {
+	AuthService     AuthService
+	TodoListService TodoListService
+	TodoItemService TodoItemService
 }
 
-func NewHandler(service *service.Service) *Handler {
-	return &Handler{service: service}
+type Handler struct {
+	Auth     *AuthHandler
+	TodoList *TodoListHandler
+	TodoItem *TodoItemHandler
+}
+
+func New(deps Deps) *Handler {
+	return &Handler{
+		Auth:     NewAuthHandler(deps.AuthService),
+		TodoList: NewTodoListHandler(deps.TodoListService),
+		TodoItem: NewTodoItemHandler(deps.TodoItemService),
+	}
 }
 
 func (h *Handler) InitRoutes() *chi.Mux {
@@ -22,35 +33,35 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Mount("/auth", h.authRouter())
-	r.With(h.UserIdentity).Mount("/api", h.apiRouter())
+	r.With(h.Auth.UserIdentity).Mount("/api", h.apiRouter())
 	return r
 }
 
 func (h *Handler) authRouter() chi.Router {
 	r := chi.NewRouter()
-	r.Post("/sign-in", h.SignIn)
-	r.Post("/sign-up", h.SignUp)
+	r.Post("/sign-up", h.Auth.SignUp)
+	r.Post("/sign-in", h.Auth.SignIn)
 	return r
 }
 
 func (h *Handler) apiRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Route("/lists", func(r chi.Router) {
-		r.Get("/", h.getAllLists)
-		r.Post("/", h.createList)
+		r.Get("/", h.TodoList.getAllLists)
+		r.Post("/", h.TodoList.createList)
 		r.Route("/{listID}", func(r chi.Router) {
-			r.Use(h.listCtx)
-			r.Get("/", h.getList)
-			r.Put("/", h.updateList)
-			r.Delete("/", h.deleteList)
+			r.Use(h.TodoList.listCtx)
+			r.Get("/", h.TodoList.getList)
+			r.Put("/", h.TodoList.updateList)
+			r.Delete("/", h.TodoList.deleteList)
 			r.Route("/todos", func(r chi.Router) {
-				r.Get("/", h.getAllTodos)
-				r.Post("/", h.createTodo)
+				r.Get("/", h.TodoItem.getAllTodos)
+				r.Post("/", h.TodoItem.createTodo)
 				r.Route("/{todoID}", func(r chi.Router) {
-					r.Use(h.todoCtx)
-					r.Get("/", h.getTodo)
-					r.Put("/", h.updateTodo)
-					r.Delete("/", h.deleteTodo)
+					r.Use(h.TodoItem.todoCtx)
+					r.Get("/", h.TodoItem.getTodo)
+					r.Put("/", h.TodoItem.updateTodo)
+					r.Delete("/", h.TodoItem.deleteTodo)
 				})
 			})
 		})

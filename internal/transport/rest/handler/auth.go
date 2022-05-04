@@ -5,15 +5,21 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
-	"github.com/vbetsun/todo-app/internal/domain"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
-type SignUpRequest struct {
-	*domain.User
+type AuthService interface {
+	CreateUser(user core.User) (int, error)
+	GenerateToken(username, password string) (string, error)
+	ParseToken(token string) (int, error)
 }
 
-type SignUpResponse struct {
-	ID int `json:"id"`
+type AuthHandler struct {
+	service AuthService
+}
+
+type SignUpRequest struct {
+	*core.User
 }
 
 type SignInRequest struct {
@@ -21,18 +27,16 @@ type SignInRequest struct {
 	Password string `json:"password"`
 }
 
+type SignUpResponse struct {
+	ID int `json:"id"`
+}
+
 type SignInResponse struct {
 	Token string `json:"token"`
 }
 
-func (si *SignInRequest) Bind(r *http.Request) error {
-	if si.Username == "" {
-		return errors.New("missing required Username field")
-	}
-	if si.Password == "" {
-		return errors.New("missing required Password field")
-	}
-	return nil
+func NewAuthHandler(service AuthService) *AuthHandler {
+	return &AuthHandler{service}
 }
 
 func (sr *SignUpRequest) Bind(r *http.Request) error {
@@ -52,7 +56,13 @@ func (sr *SignUpRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-func (rd *SignInResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (si *SignInRequest) Bind(r *http.Request) error {
+	if si.Username == "" {
+		return errors.New("missing required Username field")
+	}
+	if si.Password == "" {
+		return errors.New("missing required Password field")
+	}
 	return nil
 }
 
@@ -60,21 +70,11 @@ func (rd *SignUpResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
-	data := &SignInRequest{}
-	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
-		return
-	}
-	token, err := h.service.GenerateToken(data.Username, data.Password)
-	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
-		return
-	}
-	render.Render(w, r, &SignInResponse{Token: token})
+func (rd *SignInResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
 }
 
-func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	data := &SignUpRequest{}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -86,4 +86,18 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Render(w, r, &SignUpResponse{ID: userID})
+}
+
+func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+	data := &SignInRequest{}
+	if err := render.Bind(r, data); err != nil {
+		render.Render(w, r, ErrInvalidRequest(err))
+		return
+	}
+	token, err := h.service.GenerateToken(data.Username, data.Password)
+	if err != nil {
+		render.Render(w, r, ErrInternalServer(err))
+		return
+	}
+	render.Render(w, r, &SignInResponse{Token: token})
 }

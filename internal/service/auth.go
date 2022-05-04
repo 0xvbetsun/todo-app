@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/vbetsun/todo-app/internal/domain"
-	"github.com/vbetsun/todo-app/internal/repository"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
 const (
@@ -17,26 +16,31 @@ const (
 	tokenTTL   = 12 * time.Hour
 )
 
-type AuthService struct {
-	repo repository.Authorization
+type AuthStorage interface {
+	CreateUser(core.User) (int, error)
+	GetUser(username, password string) (core.User, error)
 }
+
+type AuthService struct {
+	storage AuthStorage
+}
+
 type TokenClaims struct {
 	jwt.RegisteredClaims
 	UserID int `json:"user_id"`
 }
 
-func NewAuthService(repo repository.Authorization) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(storage AuthStorage) *AuthService {
+	return &AuthService{storage}
 }
 
-func (s *AuthService) CreateUser(u domain.User) (int, error) {
+func (s *AuthService) CreateUser(u core.User) (int, error) {
 	u.Password = s.generateHash(u.Password)
-
-	return s.repo.CreateUser(u)
+	return s.storage.CreateUser(u)
 }
 
 func (s *AuthService) GenerateToken(uname, pwd string) (string, error) {
-	user, err := s.repo.GetUser(uname, s.generateHash(pwd))
+	user, err := s.storage.GetUser(uname, s.generateHash(pwd))
 	if err != nil {
 		return "", err
 	}

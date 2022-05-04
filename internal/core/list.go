@@ -1,4 +1,4 @@
-package domain
+package core
 
 type ListItem struct {
 	ID     int

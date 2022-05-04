@@ -1,22 +1,22 @@
-package repository
+package psql
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
 
-	"github.com/vbetsun/todo-app/internal/domain"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
-type TodoItemPostgres struct {
+type TodoItem struct {
 	db *sql.DB
 }
 
-func NewTodoItemPostgres(db *sql.DB) *TodoItemPostgres {
-	return &TodoItemPostgres{db: db}
+func NewTodoItem(db *sql.DB) *TodoItem {
+	return &TodoItem{db}
 }
 
-func (r *TodoItemPostgres) CreateTodo(listID int, todo domain.TodoItem) (int, error) {
+func (r *TodoItem) CreateTodo(listID int, todo core.TodoItem) (int, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -33,15 +33,15 @@ func (r *TodoItemPostgres) CreateTodo(listID int, todo domain.TodoItem) (int, er
 	return todoID, tx.Commit()
 }
 
-func (r *TodoItemPostgres) GetAllTodos(listID int) ([]domain.TodoItem, error) {
-	var todos []domain.TodoItem
+func (r *TodoItem) GetAllTodos(listID int) ([]core.TodoItem, error) {
+	var todos []core.TodoItem
 	rows, err := r.db.Query(allTodosQuery(), listID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var todo domain.TodoItem
+		var todo core.TodoItem
 		if err := rows.Scan(&todo.ID, &todo.Title, &todo.Description); err != nil {
 			return nil, err
 		}
@@ -53,20 +53,20 @@ func (r *TodoItemPostgres) GetAllTodos(listID int) ([]domain.TodoItem, error) {
 	return todos, nil
 }
 
-func (r *TodoItemPostgres) GetTodoByID(listID, todoID int) (domain.TodoItem, error) {
-	var todo domain.TodoItem
+func (r *TodoItem) GetTodoByID(listID, todoID int) (core.TodoItem, error) {
+	var todo core.TodoItem
 	err := r.db.QueryRow(todoByIDQuery(), listID, todoID).
 		Scan(&todo.ID, &todo.Title, &todo.Description, &todo.Done)
 	return todo, err
 }
 
-func (r *TodoItemPostgres) UpdateTodo(todoID int, data domain.UpdateItemData) error {
+func (r *TodoItem) UpdateTodo(todoID int, data core.UpdateItemData) error {
 	query, args := updateTodo(todoID, data)
 	_, err := r.db.Exec(query, args...)
 	return err
 }
 
-func (r *TodoItemPostgres) DeleteTodo(todoID int) error {
+func (r *TodoItem) DeleteTodo(todoID int) error {
 	_, err := r.db.Exec(deleteTodoById(), todoID)
 	return err
 }
@@ -105,7 +105,7 @@ func todoByIDQuery() string {
 	`, todoItemsTable, listsItemsTable)
 }
 
-func updateTodo(todoID int, data domain.UpdateItemData) (string, []interface{}) {
+func updateTodo(todoID int, data core.UpdateItemData) (string, []interface{}) {
 	setValues := make([]string, 0)
 	args := make([]interface{}, 0)
 	argID := 1

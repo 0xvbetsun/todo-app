@@ -11,8 +11,8 @@ import (
 	"syscall"
 
 	"github.com/spf13/viper"
-	"github.com/vbetsun/todo-app/internal/repository"
 	"github.com/vbetsun/todo-app/internal/service"
+	"github.com/vbetsun/todo-app/internal/storage/psql"
 	"github.com/vbetsun/todo-app/internal/transport/rest"
 	"github.com/vbetsun/todo-app/internal/transport/rest/handler"
 	"go.uber.org/zap"
@@ -27,7 +27,7 @@ func main() {
 	if err := LoadConfig("configs"); err != nil {
 		logger.Fatal(fmt.Sprintf("can't read config: %v", err))
 	}
-	db, err := repository.NewPostgres(repository.Config{
+	db, err := psql.NewDB(psql.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -39,9 +39,17 @@ func main() {
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("can't connect to the DB %v", err))
 	}
-	repo := repository.NewRepository(db)
-	service := service.NewService(repo)
-	h := handler.NewHandler(service)
+	store := psql.NewStorage(db)
+	service := service.NewService(service.Deps{
+		AuthStorage:     store.Auth,
+		TodoListStorage: store.TodoList,
+		TodoItemStorage: store.TodoItem,
+	})
+	h := handler.New(handler.Deps{
+		AuthService:     service.Auth,
+		TodoListService: service.TodoList,
+		TodoItemService: service.TodoItem,
+	})
 	srv := new(rest.Server)
 	port := viper.GetString("port")
 

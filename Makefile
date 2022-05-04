@@ -10,7 +10,7 @@ help:
 .DEFAULT_GOAL := help
 
 server: ## Run application server
-	go run ./cmd/app/main.go
+	go run ./cmd/api/main.go
 
 migrate-up: ## Run migrations
 	docker run -v $(PWD)/deployments/migrations:/migrations --network host migrate/migrate \

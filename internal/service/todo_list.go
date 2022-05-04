@@ -1,34 +1,40 @@
 package service
 
 import (
-	"github.com/vbetsun/todo-app/internal/domain"
-	"github.com/vbetsun/todo-app/internal/repository"
+	"github.com/vbetsun/todo-app/internal/core"
 )
 
+type TodoListStorage interface {
+	CreateList(userID int, list core.Todolist) (int, error)
+	GetAllLists(userID int) ([]core.Todolist, error)
+	GetListByID(userID, listID int) (core.Todolist, error)
+	UpdateList(listID int, data core.UpdateListData) error
+	DeleteList(listID int) error
+}
 type TodoListService struct {
-	repo repository.TodoList
+	storage TodoListStorage
 }
 
-func NewTodoListService(repo repository.TodoList) *TodoListService {
-	return &TodoListService{repo: repo}
+func NewTodoListService(storage TodoListStorage) *TodoListService {
+	return &TodoListService{storage}
 }
 
-func (s *TodoListService) CreateList(userID int, list domain.Todolist) (int, error) {
-	return s.repo.CreateList(userID, list)
+func (s *TodoListService) CreateList(userID int, list core.Todolist) (int, error) {
+	return s.storage.CreateList(userID, list)
 }
 
-func (s *TodoListService) GetAllLists(userID int) ([]domain.Todolist, error) {
-	return s.repo.GetAllLists(userID)
+func (s *TodoListService) GetAllLists(userID int) ([]core.Todolist, error) {
+	return s.storage.GetAllLists(userID)
 }
 
-func (s *TodoListService) GetListByID(userID, listID int) (domain.Todolist, error) {
-	return s.repo.GetListByID(userID, listID)
+func (s *TodoListService) GetListByID(userID, listID int) (core.Todolist, error) {
+	return s.storage.GetListByID(userID, listID)
 }
 
-func (s *TodoListService) UpdateList(listID int, data domain.UpdateListData) error {
-	return s.repo.UpdateList(listID, data)
+func (s *TodoListService) UpdateList(listID int, data core.UpdateListData) error {
+	return s.storage.UpdateList(listID, data)
 }
 
 func (s *TodoListService) DeleteList(listID int) error {
-	return s.repo.DeleteList(listID)
+	return s.storage.DeleteList(listID)
 }
