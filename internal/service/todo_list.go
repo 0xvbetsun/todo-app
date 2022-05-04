@@ -13,22 +13,22 @@ func NewTodoListService(repo repository.TodoList) *TodoListService {
 	return &TodoListService{repo: repo}
 }
 
-func (s *TodoListService) Create(userID int, list domain.Todolist) (int, error) {
-	return s.repo.Create(userID, list)
+func (s *TodoListService) CreateList(userID int, list domain.Todolist) (int, error) {
+	return s.repo.CreateList(userID, list)
 }
 
-func (s *TodoListService) GetAll(userID int) ([]domain.Todolist, error) {
-	return s.repo.GetAll(userID)
+func (s *TodoListService) GetAllLists(userID int) ([]domain.Todolist, error) {
+	return s.repo.GetAllLists(userID)
 }
 
-func (s *TodoListService) GetByID(userID, listID int) (domain.Todolist, error) {
-	return s.repo.GetByID(userID, listID)
+func (s *TodoListService) GetListByID(userID, listID int) (domain.Todolist, error) {
+	return s.repo.GetListByID(userID, listID)
 }
 
-func (s *TodoListService) Update(listID int, data domain.UpdateListData) error {
-	return s.repo.Update(listID, data)
+func (s *TodoListService) UpdateList(listID int, data domain.UpdateListData) error {
+	return s.repo.UpdateList(listID, data)
 }
 
-func (s *TodoListService) Delete(listID int) error {
-	return s.repo.Delete(listID)
+func (s *TodoListService) DeleteList(listID int) error {
+	return s.repo.DeleteList(listID)
 }

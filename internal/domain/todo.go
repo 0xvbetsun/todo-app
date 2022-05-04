@@ -17,3 +17,8 @@ type UpdateListData struct {
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
 }
+
+type UpdateItemData struct {
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+}

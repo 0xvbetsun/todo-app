@@ -1,8 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/viper"
 	"github.com/vbetsun/todo-app/internal/repository"
@@ -39,9 +45,22 @@ func main() {
 	srv := new(rest.Server)
 	port := viper.GetString("port")
 
+	go func() {
+		if err := srv.Run(port, h.InitRoutes()); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal(fmt.Sprintf("can't start server on port %s, err: %v", port, err))
+		} else {
+			logger.Info("Server stopped gracefully")
+		}
+	}()
 	logger.Info("Server is starting on port: " + port)
-	if err := srv.Run(port, h.InitRoutes()); err != nil {
-		logger.Fatal(fmt.Sprintf("can't start server on port %s, err: %v", port, err))
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	<-exit
+	if err := srv.Shutdown(context.Background()); err != nil {
+		logger.Error("Error occurred while server is shutting down " + err.Error())
+	}
+	if err := db.Close(); err != nil {
+		logger.Error("Error occurred while db is closing " + err.Error())
 	}
 }
 

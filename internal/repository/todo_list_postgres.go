@@ -16,7 +16,7 @@ func NewTodoListPostgres(db *sql.DB) *TodoListPostgres {
 	return &TodoListPostgres{db: db}
 }
 
-func (r *TodoListPostgres) Create(userID int, l domain.Todolist) (int, error) {
+func (r *TodoListPostgres) CreateList(userID int, l domain.Todolist) (int, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -33,7 +33,7 @@ func (r *TodoListPostgres) Create(userID int, l domain.Todolist) (int, error) {
 	return id, tx.Commit()
 }
 
-func (r *TodoListPostgres) GetAll(userID int) ([]domain.Todolist, error) {
+func (r *TodoListPostgres) GetAllLists(userID int) ([]domain.Todolist, error) {
 	var lists []domain.Todolist
 	rows, err := r.db.Query(allListsQuery(), userID)
 	if err != nil {
@@ -53,19 +53,19 @@ func (r *TodoListPostgres) GetAll(userID int) ([]domain.Todolist, error) {
 	return lists, nil
 }
 
-func (r *TodoListPostgres) GetByID(userID, listID int) (domain.Todolist, error) {
+func (r *TodoListPostgres) GetListByID(userID, listID int) (domain.Todolist, error) {
 	var list domain.Todolist
 	err := r.db.QueryRow(listByIDQuery(), userID, listID).Scan(&list.ID, &list.Title, &list.Description)
 	return list, err
 }
 
-func (r *TodoListPostgres) Update(listID int, data domain.UpdateListData) error {
+func (r *TodoListPostgres) UpdateList(listID int, data domain.UpdateListData) error {
 	query, args := updateList(listID, data)
 	_, err := r.db.Exec(query, args...)
 	return err
 }
 
-func (r *TodoListPostgres) Delete(listID int) error {
+func (r *TodoListPostgres) DeleteList(listID int) error {
 	_, err := r.db.Exec(deleteListById(), listID)
 	return err
 }
