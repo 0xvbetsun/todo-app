@@ -14,10 +14,10 @@ import (
 const todoCtx = "todo"
 
 type TodoItemService interface {
-	CreateTodo(listID int, todo core.TodoItem) (int, error)
+	CreateTodo(listID int, todo core.TodoItem) (core.TodoItem, error)
 	GetAllTodos(listID int) ([]core.TodoItem, error)
 	GetTodoByID(listID, todoID int) (core.TodoItem, error)
-	UpdateTodo(todoID int, data core.UpdateItemData) error
+	UpdateTodo(todoID int, data core.UpdateItemData) (core.TodoItem, error)
 	DeleteTodo(todoID int) error
 }
 
@@ -33,15 +33,11 @@ type UpdateTodoRequest struct {
 	*core.UpdateItemData
 }
 
-type CreateTodoResponse struct {
-	ID int `json:"id"`
-}
-
 type AllTodosResponse struct {
 	Data []core.TodoItem `json:"data"`
 }
 
-type GetTodoResponse struct {
+type TodoResponse struct {
 	*core.TodoItem
 }
 
@@ -70,11 +66,7 @@ func (at *AllTodosResponse) Render(w http.ResponseWriter, r *http.Request) error
 	return nil
 }
 
-func (ct *CreateTodoResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-func (ct *GetTodoResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (ct *TodoResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -82,7 +74,7 @@ func (h *TodoItemHandler) todoCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		list, ok := r.Context().Value(listCtx).(core.Todolist)
 		if !ok {
-			render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+			render.Render(w, r, ErrInternalServer(ErrListNotFound))
 			return
 		}
 		todoID, err := strconv.Atoi(chi.URLParam(r, "todoID"))
@@ -103,7 +95,7 @@ func (h *TodoItemHandler) todoCtx(next http.Handler) http.Handler {
 func (h *TodoItemHandler) getAllTodos(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+		render.Render(w, r, ErrInternalServer(ErrListNotFound))
 		return
 	}
 	todos, err := h.service.GetAllTodos(list.ID)
@@ -117,7 +109,7 @@ func (h *TodoItemHandler) getAllTodos(w http.ResponseWriter, r *http.Request) {
 func (h *TodoItemHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+		render.Render(w, r, ErrInternalServer(ErrListNotFound))
 		return
 	}
 	data := &CreateTodoRequest{}
@@ -125,29 +117,29 @@ func (h *TodoItemHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	id, err := h.service.CreateTodo(list.ID, *data.TodoItem)
+	todo, err := h.service.CreateTodo(list.ID, *data.TodoItem)
 	if err != nil {
 		render.Render(w, r, ErrInternalServer(err))
 		return
 	}
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &CreateTodoResponse{ID: id})
+	render.Render(w, r, &TodoResponse{TodoItem: &todo})
 }
 
 func (h *TodoItemHandler) getTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("todoID not found")))
+		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
 		return
 	}
 
-	render.Render(w, r, &GetTodoResponse{TodoItem: &todo})
+	render.Render(w, r, &TodoResponse{TodoItem: &todo})
 }
 
 func (h *TodoItemHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("todoID not found")))
+		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
 		return
 	}
 	data := &UpdateTodoRequest{}
@@ -155,18 +147,18 @@ func (h *TodoItemHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	err := h.service.UpdateTodo(todo.ID, *data.UpdateItemData)
+	todo, err := h.service.UpdateTodo(todo.ID, *data.UpdateItemData)
 	if err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	render.NoContent(w, r)
+	render.Render(w, r, &TodoResponse{TodoItem: &todo})
 }
 
 func (h *TodoItemHandler) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("todoID not found")))
+		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
 		return
 	}
 	err := h.service.DeleteTodo(todo.ID)

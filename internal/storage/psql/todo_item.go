@@ -16,21 +16,26 @@ func NewTodoItem(db *sql.DB) *TodoItem {
 	return &TodoItem{db}
 }
 
-func (r *TodoItem) CreateTodo(listID int, todo core.TodoItem) (int, error) {
+func (r *TodoItem) CreateTodo(listID int, t core.TodoItem) (core.TodoItem, error) {
+	var todo core.TodoItem
 	tx, err := r.db.Begin()
 	if err != nil {
-		return 0, err
+		return todo, err
 	}
-	var todoID int
-	if err := tx.QueryRow(createTodoQuery(), todo.Title, todo.Description).Scan(&todoID); err != nil {
-		tx.Rollback()
-		return 0, err
+	err = tx.QueryRow(createTodoQuery(), t.Title, t.Description).Scan(&todo.ID, &todo.Title, &todo.Description)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return todo, fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return todo, err
 	}
-	if _, err := tx.Exec(createListItemsQuery(), listID, todoID); err != nil {
-		tx.Rollback()
-		return 0, err
+	if _, err := tx.Exec(createListItemsQuery(), listID, todo.ID); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return todo, fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return todo, err
 	}
-	return todoID, tx.Commit()
+	return todo, tx.Commit()
 }
 
 func (r *TodoItem) GetAllTodos(listID int) ([]core.TodoItem, error) {
@@ -60,10 +65,11 @@ func (r *TodoItem) GetTodoByID(listID, todoID int) (core.TodoItem, error) {
 	return todo, err
 }
 
-func (r *TodoItem) UpdateTodo(todoID int, data core.UpdateItemData) error {
+func (r *TodoItem) UpdateTodo(todoID int, data core.UpdateItemData) (core.TodoItem, error) {
+	var t core.TodoItem
 	query, args := updateTodo(todoID, data)
-	_, err := r.db.Exec(query, args...)
-	return err
+	err := r.db.QueryRow(query, args...).Scan(&t.ID, &t.Title, &t.Description, &t.Done)
+	return t, err
 }
 
 func (r *TodoItem) DeleteTodo(todoID int) error {
@@ -75,7 +81,7 @@ func createTodoQuery() string {
 	return fmt.Sprintf(`--sql
 		INSERT INTO %s (title, description)
 		VALUES ($1, $2)
-		RETURNING id
+		RETURNING id, title, description
 	`, todoItemsTable)
 }
 
@@ -125,6 +131,7 @@ func updateTodo(todoID int, data core.UpdateItemData) (string, []interface{}) {
 		UPDATE %s
 		SET %s
 		WHERE id = $%d
+		RETURNING id, title, description, done
 	`, todoItemsTable, setQuery, argID), args
 }
 

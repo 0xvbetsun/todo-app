@@ -15,12 +15,11 @@ func NewAuth(db *sql.DB) *Auth {
 	return &Auth{db}
 }
 
-func (r *Auth) CreateUser(u core.User) (int, error) {
-	var id int
-	if err := r.db.QueryRow(createUserQuery(), u.Name, u.Username, u.Password).Scan(&id); err != nil {
-		return 0, err
-	}
-	return id, nil
+func (r *Auth) CreateUser(u core.User) (core.User, error) {
+	var user core.User
+	err := r.db.QueryRow(createUserQuery(), u.Name, u.Username, u.Password).
+		Scan(&user.ID, &user.Name, &user.Username)
+	return user, err
 }
 
 func (r *Auth) GetUser(username, pwd string) (core.User, error) {
@@ -33,7 +32,8 @@ func (r *Auth) GetUser(username, pwd string) (core.User, error) {
 func createUserQuery() string {
 	return fmt.Sprintf(`--sql
 		INSERT INTO %s (name, username, password_hash) 
-		VALUES ($1, $2, $3) RETURNING id
+		VALUES ($1, $2, $3) 
+		RETURNING id, name, username
 	`, usersTable)
 }
 

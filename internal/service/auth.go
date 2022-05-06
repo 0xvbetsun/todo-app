@@ -17,7 +17,7 @@ const (
 )
 
 type AuthStorage interface {
-	CreateUser(core.User) (int, error)
+	CreateUser(core.User) (core.User, error)
 	GetUser(username, password string) (core.User, error)
 }
 
@@ -34,7 +34,7 @@ func NewAuthService(storage AuthStorage) *AuthService {
 	return &AuthService{storage}
 }
 
-func (s *AuthService) CreateUser(u core.User) (int, error) {
+func (s *AuthService) CreateUser(u core.User) (core.User, error) {
 	u.Password = s.generateHash(u.Password)
 	return s.storage.CreateUser(u)
 }

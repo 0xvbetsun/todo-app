@@ -16,21 +16,26 @@ func NewTodoList(db *sql.DB) *TodoList {
 	return &TodoList{db}
 }
 
-func (r *TodoList) CreateList(userID int, l core.Todolist) (int, error) {
+func (r *TodoList) CreateList(userID int, l core.Todolist) (core.Todolist, error) {
+	var list core.Todolist
 	tx, err := r.db.Begin()
 	if err != nil {
-		return 0, err
+		return list, err
 	}
-	var id int
-	if err := tx.QueryRow(createListQuery(), l.Title, l.Description).Scan(&id); err != nil {
-		tx.Rollback()
-		return 0, err
+	err = tx.QueryRow(createListQuery(), l.Title, l.Description).Scan(&list.ID, &list.Title, &list.Description)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return list, fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return list, err
 	}
-	if _, err := tx.Exec(createUsersListQuery(), userID, id); err != nil {
-		tx.Rollback()
-		return 0, err
+	if _, err := tx.Exec(createUsersListQuery(), userID, list.ID); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return list, fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return list, err
 	}
-	return id, tx.Commit()
+	return list, tx.Commit()
 }
 
 func (r *TodoList) GetAllLists(userID int) ([]core.Todolist, error) {
@@ -59,10 +64,11 @@ func (r *TodoList) GetListByID(userID, listID int) (core.Todolist, error) {
 	return list, err
 }
 
-func (r *TodoList) UpdateList(listID int, data core.UpdateListData) error {
+func (r *TodoList) UpdateList(listID int, data core.UpdateListData) (core.Todolist, error) {
+	var list core.Todolist
 	query, args := updateList(listID, data)
-	_, err := r.db.Exec(query, args...)
-	return err
+	err := r.db.QueryRow(query, args...).Scan(&list.ID, &list.Title, &list.Description)
+	return list, err
 }
 
 func (r *TodoList) DeleteList(listID int) error {
@@ -73,14 +79,16 @@ func (r *TodoList) DeleteList(listID int) error {
 func createUsersListQuery() string {
 	return fmt.Sprintf(`--sql
 		INSERT INTO %s (user_id, list_id) 
-		VALUES ($1, $2) RETURNING id
+		VALUES ($1, $2) 
+		RETURNING id
 	`, usersListsTable)
 }
 
 func createListQuery() string {
 	return fmt.Sprintf(`--sql
 		INSERT INTO %s (title, description) 
-		VALUES ($1, $2) RETURNING id
+		VALUES ($1, $2) 
+		RETURNING id, title, description
 	`, todoListsTable)
 }
 
@@ -123,6 +131,7 @@ func updateList(listID int, data core.UpdateListData) (string, []interface{}) {
 		UPDATE %s
 		SET %s
 		WHERE id = $%d
+		RETURNING id, title, description
 	`, todoListsTable, setQuery, argID), args
 }
 

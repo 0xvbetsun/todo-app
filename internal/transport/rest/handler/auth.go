@@ -9,7 +9,7 @@ import (
 )
 
 type AuthService interface {
-	CreateUser(user core.User) (int, error)
+	CreateUser(user core.User) (core.User, error)
 	GenerateToken(username, password string) (string, error)
 	ParseToken(token string) (int, error)
 }
@@ -28,7 +28,9 @@ type SignInRequest struct {
 }
 
 type SignUpResponse struct {
-	ID int `json:"id"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
 }
 
 type SignInResponse struct {
@@ -80,12 +82,12 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	userID, err := h.service.CreateUser(*data.User)
+	u, err := h.service.CreateUser(*data.User)
 	if err != nil {
 		render.Render(w, r, ErrInternalServer(err))
 		return
 	}
-	render.Render(w, r, &SignUpResponse{ID: userID})
+	render.Render(w, r, &SignUpResponse{ID: u.ID, Name: u.Name, Username: u.Username})
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {

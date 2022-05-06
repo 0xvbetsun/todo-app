@@ -14,10 +14,10 @@ import (
 const listCtx = "list"
 
 type TodoListService interface {
-	CreateList(userID int, list core.Todolist) (int, error)
+	CreateList(userID int, list core.Todolist) (core.Todolist, error)
 	GetAllLists(userID int) ([]core.Todolist, error)
 	GetListByID(userID, listID int) (core.Todolist, error)
-	UpdateList(listID int, data core.UpdateListData) error
+	UpdateList(listID int, data core.UpdateListData) (core.Todolist, error)
 	DeleteList(listID int) error
 }
 
@@ -37,11 +37,7 @@ type AllListsResponse struct {
 	Data []core.Todolist `json:"data"`
 }
 
-type CreateListResponse struct {
-	ID int `json:"id"`
-}
-
-type GetListResponse struct {
+type ListResponse struct {
 	*core.Todolist
 }
 
@@ -63,7 +59,7 @@ func (ul *UpdateListRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-func (cl *CreateListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (cl *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -71,10 +67,6 @@ func (al *AllListsResponse) Render(w http.ResponseWriter, r *http.Request) error
 	if len(al.Data) == 0 {
 		al.Data = make([]core.Todolist, 0)
 	}
-	return nil
-}
-
-func (gl *GetListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -125,29 +117,28 @@ func (h *TodoListHandler) createList(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	id, err := h.service.CreateList(userID, *data.Todolist)
+	list, err := h.service.CreateList(userID, *data.Todolist)
 	if err != nil {
 		render.Render(w, r, ErrInternalServer(err))
 		return
 	}
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &CreateListResponse{ID: id})
+	render.Render(w, r, &ListResponse{Todolist: &list})
 }
 
 func (h *TodoListHandler) getList(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+		render.Render(w, r, ErrInternalServer(ErrListNotFound))
 		return
 	}
-
-	render.Render(w, r, &GetListResponse{Todolist: &list})
+	render.Render(w, r, &ListResponse{Todolist: &list})
 }
 
 func (h *TodoListHandler) updateList(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+		render.Render(w, r, ErrInternalServer(ErrListNotFound))
 		return
 	}
 	data := &UpdateListRequest{}
@@ -155,18 +146,18 @@ func (h *TodoListHandler) updateList(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	err := h.service.UpdateList(list.ID, *data.UpdateListData)
+	list, err := h.service.UpdateList(list.ID, *data.UpdateListData)
 	if err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	render.NoContent(w, r)
+	render.Render(w, r, &ListResponse{Todolist: &list})
 }
 
 func (h *TodoListHandler) deleteList(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(errors.New("listID not found")))
+		render.Render(w, r, ErrInternalServer(ErrListNotFound))
 		return
 	}
 	err := h.service.DeleteList(list.ID)

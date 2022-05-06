@@ -5,10 +5,10 @@ import (
 )
 
 type TodoListStorage interface {
-	CreateList(userID int, list core.Todolist) (int, error)
+	CreateList(userID int, list core.Todolist) (core.Todolist, error)
 	GetAllLists(userID int) ([]core.Todolist, error)
 	GetListByID(userID, listID int) (core.Todolist, error)
-	UpdateList(listID int, data core.UpdateListData) error
+	UpdateList(listID int, data core.UpdateListData) (core.Todolist, error)
 	DeleteList(listID int) error
 }
 type TodoListService struct {
@@ -19,7 +19,7 @@ func NewTodoListService(storage TodoListStorage) *TodoListService {
 	return &TodoListService{storage}
 }
 
-func (s *TodoListService) CreateList(userID int, list core.Todolist) (int, error) {
+func (s *TodoListService) CreateList(userID int, list core.Todolist) (core.Todolist, error) {
 	return s.storage.CreateList(userID, list)
 }
 
@@ -31,7 +31,7 @@ func (s *TodoListService) GetListByID(userID, listID int) (core.Todolist, error)
 	return s.storage.GetListByID(userID, listID)
 }
 
-func (s *TodoListService) UpdateList(listID int, data core.UpdateListData) error {
+func (s *TodoListService) UpdateList(listID int, data core.UpdateListData) (core.Todolist, error) {
 	return s.storage.UpdateList(listID, data)
 }
 

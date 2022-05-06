@@ -52,7 +52,7 @@ func (h *Handler) apiRouter() chi.Router {
 		r.Route("/{listID}", func(r chi.Router) {
 			r.Use(h.TodoList.listCtx)
 			r.Get("/", h.TodoList.getList)
-			r.Put("/", h.TodoList.updateList)
+			r.Patch("/", h.TodoList.updateList)
 			r.Delete("/", h.TodoList.deleteList)
 			r.Route("/todos", func(r chi.Router) {
 				r.Get("/", h.TodoItem.getAllTodos)
@@ -60,7 +60,7 @@ func (h *Handler) apiRouter() chi.Router {
 				r.Route("/{todoID}", func(r chi.Router) {
 					r.Use(h.TodoItem.todoCtx)
 					r.Get("/", h.TodoItem.getTodo)
-					r.Put("/", h.TodoItem.updateTodo)
+					r.Patch("/", h.TodoItem.updateTodo)
 					r.Delete("/", h.TodoItem.deleteTodo)
 				})
 			})

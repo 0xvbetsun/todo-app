@@ -1,9 +1,15 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/render"
+)
+
+var (
+	ErrListNotFound = errors.New("listID not found")
+	ErrTodoNotFound = errors.New("todoID not found")
 )
 
 type ErrResponse struct {
