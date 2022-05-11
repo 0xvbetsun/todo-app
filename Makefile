@@ -21,4 +21,8 @@ migrate-down: ## Rollback migrations
 	-path=/migrations/ -database postgres://postgres:$(POSTGRES_PASSWORD)@localhost:5434/postgres?sslmode=disable down -all
 
 gen-oas: ## Generate OpenAPI from Postman
-	p2o ./api/postman_collection.json -f ./api/oas.yml
+	p2o ./api/TodoApp.postman_collection.json -f ./api/oas.yml
+
+test-e2e: ## Run postman tests
+	docker run -v $(PWD)/api:/etc/newman -t postman/newman:alpine \
+		run TodoApp.postman_collection.json --environment="TodoApp.postman_environment.json"

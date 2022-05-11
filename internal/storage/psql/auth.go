@@ -7,14 +7,17 @@ import (
 	"github.com/vbetsun/todo-app/internal/core"
 )
 
+// Auth represents repository for authorization and authentication
 type Auth struct {
 	db *sql.DB
 }
 
+// NewAuth return instance of auth repository
 func NewAuth(db *sql.DB) *Auth {
 	return &Auth{db}
 }
 
+// CreateUser creates new user in DB
 func (r *Auth) CreateUser(u core.User) (core.User, error) {
 	var user core.User
 	err := r.db.QueryRow(createUserQuery(), u.Name, u.Username, u.Password).
@@ -22,6 +25,7 @@ func (r *Auth) CreateUser(u core.User) (core.User, error) {
 	return user, err
 }
 
+// GetUser returns user from DB by username and password
 func (r *Auth) GetUser(username, pwd string) (core.User, error) {
 	var user core.User
 	err := r.db.QueryRow(getUserQuery(), username, pwd).Scan(&user.ID)

@@ -1,3 +1,4 @@
+// PAckage handler implements router and endpoints for REST API
 package handler
 
 import (
@@ -7,6 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Deps represents external dependencies for rest handlers
 type Deps struct {
 	AuthService     AuthService
 	TodoListService TodoListService
@@ -14,6 +16,7 @@ type Deps struct {
 	Log             *zap.Logger
 }
 
+// Handler represents rest modules of API
 type Handler struct {
 	Auth     *AuthHandler
 	TodoList *TodoListHandler
@@ -21,6 +24,7 @@ type Handler struct {
 	log      *zap.Logger
 }
 
+// New returns instance of rest handler
 func New(deps Deps) *Handler {
 	return &Handler{
 		Auth:     NewAuthHandler(deps.AuthService, deps.Log),
@@ -30,6 +34,7 @@ func New(deps Deps) *Handler {
 	}
 }
 
+// Routes creates, composes, and returns rest routes for API
 func (h *Handler) Routes() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)

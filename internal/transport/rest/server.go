@@ -1,3 +1,4 @@
+// Package rest implements setup, teardown and handlers for the REST API
 package rest
 
 import (
@@ -6,10 +7,12 @@ import (
 	"time"
 )
 
+// Server represents API server of application
 type Server struct {
 	httpServer *http.Server
 }
 
+// Run creates configuration for the server and starts it
 func (s *Server) Run(port string, handler http.Handler) error {
 	s.httpServer = &http.Server{
 		Addr:           ":" + port,
@@ -21,6 +24,7 @@ func (s *Server) Run(port string, handler http.Handler) error {
 	return s.httpServer.ListenAndServe()
 }
 
+// Shutdown stops the Server
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }

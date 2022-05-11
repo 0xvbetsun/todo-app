@@ -8,14 +8,17 @@ import (
 	"github.com/vbetsun/todo-app/internal/core"
 )
 
+// TodoList represents List of todos repository
 type TodoList struct {
 	db *sql.DB
 }
 
+// NewTodoList returns instance of List repository
 func NewTodoList(db *sql.DB) *TodoList {
 	return &TodoList{db}
 }
 
+// CreateList creates new List in the DB and links it to the given User
 func (r *TodoList) CreateList(userID int, l core.Todolist) (core.Todolist, error) {
 	var list core.Todolist
 	tx, err := r.db.Begin()
@@ -38,6 +41,7 @@ func (r *TodoList) CreateList(userID int, l core.Todolist) (core.Todolist, error
 	return list, tx.Commit()
 }
 
+// GetAllLists returns all lists from DB which belong to the given User
 func (r *TodoList) GetAllLists(userID int) ([]core.Todolist, error) {
 	var lists []core.Todolist
 	rows, err := r.db.Query(allListsQuery(), userID)
@@ -58,12 +62,14 @@ func (r *TodoList) GetAllLists(userID int) ([]core.Todolist, error) {
 	return lists, nil
 }
 
+// GetListByID returns list by ID from DB which belongs to the given User
 func (r *TodoList) GetListByID(userID, listID int) (core.Todolist, error) {
 	var list core.Todolist
 	err := r.db.QueryRow(listByIDQuery(), userID, listID).Scan(&list.ID, &list.Title, &list.Description)
 	return list, err
 }
 
+// UpdateList save changes of list to the DB
 func (r *TodoList) UpdateList(listID int, data core.UpdateListData) (core.Todolist, error) {
 	var list core.Todolist
 	query, args := updateList(listID, data)
@@ -71,6 +77,7 @@ func (r *TodoList) UpdateList(listID int, data core.UpdateListData) (core.Todoli
 	return list, err
 }
 
+// DeleteList removes List from DB by ID
 func (r *TodoList) DeleteList(listID int) error {
 	_, err := r.db.Exec(deleteListById(), listID)
 	return err

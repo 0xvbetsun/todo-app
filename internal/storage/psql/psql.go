@@ -1,3 +1,4 @@
+// Package psql used for storing data in PostgreSQL database
 package psql
 
 import (
@@ -17,6 +18,7 @@ const (
 	listsItemsTable = "lists_items"
 )
 
+// Config represents all required fields for connecting to postgres db
 type Config struct {
 	Host     string
 	Port     string
@@ -27,12 +29,14 @@ type Config struct {
 	Logger   *zap.Logger
 }
 
+// Storage contains all implemented repositories
 type Storage struct {
 	Auth     *Auth
 	TodoList *TodoList
 	TodoItem *TodoItem
 }
 
+// String returns connection string from config
 func (cfg Config) String() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
@@ -45,6 +49,7 @@ func (cfg Config) String() string {
 	)
 }
 
+// NewDB creates and validates new db connection
 func NewDB(cfg Config) (*sql.DB, error) {
 	zapadapter.NewLogger(cfg.Logger)
 	db, err := sql.Open("pgx", cfg.String())
@@ -59,6 +64,7 @@ func NewDB(cfg Config) (*sql.DB, error) {
 	return db, nil
 }
 
+// NewStorage returns all implemented repositories
 func NewStorage(db *sql.DB) *Storage {
 	return &Storage{
 		Auth:     NewAuth(db),

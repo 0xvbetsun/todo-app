@@ -8,14 +8,17 @@ import (
 	"github.com/vbetsun/todo-app/internal/core"
 )
 
+// TodoItem represents Todo repository
 type TodoItem struct {
 	db *sql.DB
 }
 
+// NewTodoItem returns instance of Todo repository
 func NewTodoItem(db *sql.DB) *TodoItem {
 	return &TodoItem{db}
 }
 
+// CreateTodo creates new Todo in DB and links it to the List
 func (r *TodoItem) CreateTodo(listID int, t core.TodoItem) (core.TodoItem, error) {
 	var todo core.TodoItem
 	tx, err := r.db.Begin()
@@ -38,6 +41,7 @@ func (r *TodoItem) CreateTodo(listID int, t core.TodoItem) (core.TodoItem, error
 	return todo, tx.Commit()
 }
 
+// GetAllTodos returns all todos which related to the given List
 func (r *TodoItem) GetAllTodos(listID int) ([]core.TodoItem, error) {
 	var todos []core.TodoItem
 	rows, err := r.db.Query(allTodosQuery(), listID)
@@ -58,6 +62,7 @@ func (r *TodoItem) GetAllTodos(listID int) ([]core.TodoItem, error) {
 	return todos, nil
 }
 
+// GetTodoByID returns todo by ID which related to the given list
 func (r *TodoItem) GetTodoByID(listID, todoID int) (core.TodoItem, error) {
 	var todo core.TodoItem
 	err := r.db.QueryRow(todoByIDQuery(), listID, todoID).
@@ -65,6 +70,7 @@ func (r *TodoItem) GetTodoByID(listID, todoID int) (core.TodoItem, error) {
 	return todo, err
 }
 
+// UpdateTodo save Todo changes to the db
 func (r *TodoItem) UpdateTodo(todoID int, data core.UpdateItemData) (core.TodoItem, error) {
 	var t core.TodoItem
 	query, args := updateTodo(todoID, data)
@@ -72,6 +78,7 @@ func (r *TodoItem) UpdateTodo(todoID int, data core.UpdateItemData) (core.TodoIt
 	return t, err
 }
 
+// DeleteTodo removes todo from DB by ID
 func (r *TodoItem) DeleteTodo(todoID int) error {
 	_, err := r.db.Exec(deleteTodoById(), todoID)
 	return err
