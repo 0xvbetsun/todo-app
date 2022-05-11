@@ -1,0 +1,865 @@
+openapi: 3.0.0
+info:
+  title: Todo App
+  version: 1.0.0
+servers:
+  - url: http://{{baseurl}}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: Auth
+  - name: Lists
+  - name: Todos
+paths:
+  /auth/sign-up:
+    post:
+      tags:
+        - Auth
+      summary: Sign Up
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: '{{username}}'
+                name: '{{name}}'
+                password: '{{password}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Fri, 06 May 2022 14:44:49 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '53'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 45
+                name: Delpha
+                username: JoannyRuecker
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Mon, 02 May 2022 16:22:44 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '106'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: >-
+                  ERROR: duplicate key value violates unique constraint
+                  "users_username_key" (SQLSTATE 23505)
+  /auth/sign-in:
+    post:
+      tags:
+        - Auth
+      summary: Sign In
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: '{{username}}'
+                password: '{{password}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Mon, 02 May 2022 16:27:39 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '157'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                token: >-
+                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTE1NTIwNTksImlhdCI6MTY1MTUwODg1OSwidXNlcl9pZCI6Nn0.V63SimZCJn8PKuwnyH6Y0hwK4G_u4FFILRwIxVhtlco
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Mon, 02 May 2022 16:33:16 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '39'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: 'sql: no rows in result set'
+  /api/lists:
+    post:
+      tags:
+        - Lists
+      summary: Create List
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: '{{$randomLoremWords}}'
+                description: '{{$randomLoremSentence}}'
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Fri, 06 May 2022 15:28:03 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '120'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 103
+                title: rerum rerum illum
+                description: >-
+                  Dicta omnis aliquid minus quia fugiat molestiae minima
+                  officiis.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:13 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+    get:
+      tags:
+        - Lists
+      summary: All Lists
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:23:21 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '114'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  - id: 1
+                    title: vero et eum
+                    description: Voluptate at quo numquam labore quia praesentium rerum.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+  /api/lists/{listID}:
+    patch:
+      tags:
+        - Lists
+      summary: Update List
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: '{{$randomLoremWords}}'
+                description: '{{$randomLoremSentence}}'
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Fri, 06 May 2022 15:28:06 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '102'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 103
+                title: incidunt architecto blanditiis
+                description: Sequi esse quisquam corporis sit.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:13 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+    get:
+      tags:
+        - Lists
+      summary: List By ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 18:31:08 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '103'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 1
+                title: vero et eum
+                description: Voluptate at quo numquam labore quia praesentium rerum.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 17:00:12 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '29'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: listID not found
+    delete:
+      tags:
+        - Lists
+      summary: Remove List
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 21:07:57 GMT
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: null
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 20:58:02 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '32'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: Resource not found.
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 17:00:12 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '29'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: listID not found
+  /api/lists/{listID}/todos:
+    post:
+      tags:
+        - Todos
+      summary: Create Todo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: '{{$randomLoremWords}}'
+                description: '{{$randomLoremSentence}}'
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Fri, 06 May 2022 15:30:47 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '93'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 7
+                title: ut sed cum
+                description: Explicabo eum nulla non eligendi.
+                done: false
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:13 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+    get:
+      tags:
+        - Todos
+      summary: All Todos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Wed, 04 May 2022 12:01:53 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '129'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  - id: 2
+                    title: ut aliquid quos
+                    description: Incidunt sunt iusto facilis nostrum autem sequi iure.
+                    done: false
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+  /api/lists/{listID}/todos/{todoID}:
+    patch:
+      tags:
+        - Todos
+      summary: Update Todo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: '{{$randomLoremWords}}'
+                description: '{{$randomLoremSentence}}'
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+        - name: todoID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{todoID}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Fri, 06 May 2022 15:32:00 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '96'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 7
+                title: vitae nulla et
+                description: Modi quia esse maiores delectus.
+                done: false
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:13 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+    get:
+      tags:
+        - Todos
+      summary: Todo By ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+        - name: todoID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{todoID}}'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 18:31:08 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '103'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 1
+                title: vero et eum
+                description: Voluptate at quo numquam labore quia praesentium rerum.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 17:00:12 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '29'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: listID not found
+    delete:
+      tags:
+        - Todos
+      summary: Remove Todo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{listID}}'
+        - name: todoID
+          in: path
+          schema:
+            type: string
+          required: true
+          example: '{{todoID}}'
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 21:07:57 GMT
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: null
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 09:24:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '30'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: empty auth header
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 20:58:02 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '32'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: Resource not found.
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Date:
+              schema:
+                type: string
+                example: Tue, 03 May 2022 17:00:12 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '29'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: listID not found

@@ -1,5 +1,28 @@
 version: "3.9"
 services:
+  server:
+      container_name: server
+      build:
+        context: ../
+        dockerfile: ./build/Dockerfile
+      environment:
+        PORT: ${PORT}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ports:
+      - "${PORT}:${PORT}"
+      restart: always
+      volumes:
+        - type: bind
+          source: ../deployments
+          target: /deployments
+        - type: bind
+          source: ../configs
+          target: /configs
+      depends_on:
+        - postgres
+      networks:
+        - postgres
+
   postgres:
     container_name: postgres_container
     image: postgres:13.3
@@ -48,6 +71,18 @@ services:
       - postgres
     networks:
       - postgres
+
+  swagger-ui:
+    container_name: "swagger-ui"
+    image: swaggerapi/swagger-ui
+    ports:
+      - "${DOCS_PORT}:8080"
+    volumes:
+      - type: bind
+        source: ../api
+        target: /api
+    environment:
+      SWAGGER_JSON: /api/oas.yml
 
 networks:
   postgres:

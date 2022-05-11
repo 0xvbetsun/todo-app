@@ -80,7 +80,6 @@ func createUsersListQuery() string {
 	return fmt.Sprintf(`--sql
 		INSERT INTO %s (user_id, list_id) 
 		VALUES ($1, $2) 
-		RETURNING id
 	`, usersListsTable)
 }
 

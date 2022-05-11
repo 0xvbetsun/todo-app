@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrRenderResp   = errors.New("can't render response")
 	ErrListNotFound = errors.New("listID not found")
 	ErrTodoNotFound = errors.New("todoID not found")
 )

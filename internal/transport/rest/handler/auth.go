@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/vbetsun/todo-app/internal/core"
+	"go.uber.org/zap"
 )
 
 type AuthService interface {
@@ -16,6 +17,7 @@ type AuthService interface {
 
 type AuthHandler struct {
 	service AuthService
+	log     *zap.Logger
 }
 
 type SignUpRequest struct {
@@ -37,8 +39,8 @@ type SignInResponse struct {
 	Token string `json:"token"`
 }
 
-func NewAuthHandler(service AuthService) *AuthHandler {
-	return &AuthHandler{service}
+func NewAuthHandler(service AuthService, log *zap.Logger) *AuthHandler {
+	return &AuthHandler{service, log}
 }
 
 func (sr *SignUpRequest) Bind(r *http.Request) error {
@@ -79,27 +81,39 @@ func (rd *SignInResponse) Render(w http.ResponseWriter, r *http.Request) error {
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	data := &SignUpRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		if rErr := render.Render(w, r, ErrInvalidRequest(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	u, err := h.service.CreateUser(*data.User)
 	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
+		if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
-	render.Render(w, r, &SignUpResponse{ID: u.ID, Name: u.Name, Username: u.Username})
+	if err := render.Render(w, r, &SignUpResponse{ID: u.ID, Name: u.Name, Username: u.Username}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	data := &SignInRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		if rErr := render.Render(w, r, ErrInvalidRequest(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	token, err := h.service.GenerateToken(data.Username, data.Password)
 	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
+		if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
-	render.Render(w, r, &SignInResponse{Token: token})
+	if err := render.Render(w, r, &SignInResponse{Token: token}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }

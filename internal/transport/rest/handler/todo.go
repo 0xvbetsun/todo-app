@@ -9,9 +9,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/vbetsun/todo-app/internal/core"
+	"go.uber.org/zap"
 )
 
-const todoCtx = "todo"
+// Key to use when setting the todo context.
+type ctxKeyTodo string
+
+const todoCtx ctxKeyTodo = "todo"
 
 type TodoItemService interface {
 	CreateTodo(listID int, todo core.TodoItem) (core.TodoItem, error)
@@ -23,6 +27,7 @@ type TodoItemService interface {
 
 type TodoItemHandler struct {
 	service TodoItemService
+	log     *zap.Logger
 }
 
 type CreateTodoRequest struct {
@@ -41,8 +46,8 @@ type TodoResponse struct {
 	*core.TodoItem
 }
 
-func NewTodoItemHandler(service TodoItemService) *TodoItemHandler {
-	return &TodoItemHandler{service}
+func NewTodoItemHandler(service TodoItemService, log *zap.Logger) *TodoItemHandler {
+	return &TodoItemHandler{service, log}
 }
 
 func (ct *CreateTodoRequest) Bind(r *http.Request) error {
@@ -74,17 +79,23 @@ func (h *TodoItemHandler) todoCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		list, ok := r.Context().Value(listCtx).(core.Todolist)
 		if !ok {
-			render.Render(w, r, ErrInternalServer(ErrListNotFound))
+			if err := render.Render(w, r, ErrInternalServer(ErrListNotFound)); err != nil {
+				h.log.Error(ErrRenderResp.Error())
+			}
 			return
 		}
 		todoID, err := strconv.Atoi(chi.URLParam(r, "todoID"))
 		if err != nil {
-			render.Render(w, r, ErrInternalServer(err))
+			if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+				h.log.Error(ErrRenderResp.Error())
+			}
 			return
 		}
 		todo, err := h.service.GetTodoByID(list.ID, todoID)
 		if err != nil {
-			render.Render(w, r, ErrNotFound)
+			if rErr := render.Render(w, r, ErrNotFound); rErr != nil {
+				h.log.Error(ErrRenderResp.Error())
+			}
 			return
 		}
 		ctx := context.WithValue(r.Context(), todoCtx, todo)
@@ -95,75 +106,104 @@ func (h *TodoItemHandler) todoCtx(next http.Handler) http.Handler {
 func (h *TodoItemHandler) getAllTodos(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(ErrListNotFound))
+		if err := render.Render(w, r, ErrInternalServer(ErrListNotFound)); err != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	todos, err := h.service.GetAllTodos(list.ID)
 	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
+		if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
-	render.Render(w, r, &AllTodosResponse{Data: todos})
+	if err := render.Render(w, r, &AllTodosResponse{Data: todos}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }
 
 func (h *TodoItemHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	list, ok := r.Context().Value(listCtx).(core.Todolist)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(ErrListNotFound))
+		if err := render.Render(w, r, ErrInternalServer(ErrListNotFound)); err != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	data := &CreateTodoRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		if rErr := render.Render(w, r, ErrInvalidRequest(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	todo, err := h.service.CreateTodo(list.ID, *data.TodoItem)
 	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
+		if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &TodoResponse{TodoItem: &todo})
+	if err := render.Render(w, r, &TodoResponse{TodoItem: &todo}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }
 
 func (h *TodoItemHandler) getTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
+		if err := render.Render(w, r, ErrInternalServer(ErrTodoNotFound)); err != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
-
-	render.Render(w, r, &TodoResponse{TodoItem: &todo})
+	if err := render.Render(w, r, &TodoResponse{TodoItem: &todo}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }
 
 func (h *TodoItemHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
+		if err := render.Render(w, r, ErrInternalServer(ErrTodoNotFound)); err != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	data := &UpdateTodoRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		if rErr := render.Render(w, r, ErrInvalidRequest(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	todo, err := h.service.UpdateTodo(todo.ID, *data.UpdateItemData)
 	if err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		if rErr := render.Render(w, r, ErrInvalidRequest(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
-	render.Render(w, r, &TodoResponse{TodoItem: &todo})
+	if err := render.Render(w, r, &TodoResponse{TodoItem: &todo}); err != nil {
+		h.log.Error(ErrRenderResp.Error())
+	}
 }
 
 func (h *TodoItemHandler) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	todo, ok := r.Context().Value(todoCtx).(core.TodoItem)
 	if !ok {
-		render.Render(w, r, ErrInternalServer(ErrTodoNotFound))
+		if err := render.Render(w, r, ErrInternalServer(ErrTodoNotFound)); err != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	err := h.service.DeleteTodo(todo.ID)
 	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
+		if rErr := render.Render(w, r, ErrInternalServer(err)); rErr != nil {
+			h.log.Error(ErrRenderResp.Error())
+		}
 		return
 	}
 	render.NoContent(w, r)

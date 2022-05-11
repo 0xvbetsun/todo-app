@@ -13,9 +13,9 @@ CREATE TABLE todo_lists (
 );
 
 CREATE TABLE users_lists (
-	id SERIAL NOT NULL UNIQUE,
 	user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-	list_id INT REFERENCES todo_lists(id) ON DELETE CASCADE NOT NULL
+	list_id INT REFERENCES todo_lists(id) ON DELETE CASCADE NOT NULL,
+	PRIMARY KEY (user_id, list_id)
 );
 
 CREATE TABLE todo_items (
@@ -26,8 +26,8 @@ CREATE TABLE todo_items (
 );
 
 CREATE TABLE lists_items (
-	id SERIAL NOT NULL UNIQUE,
 	list_id INT REFERENCES todo_lists(id) ON DELETE CASCADE NOT NULL,
-	item_id INT REFERENCES todo_items(id) ON DELETE CASCADE NOT NULL
+	item_id INT REFERENCES todo_items(id) ON DELETE CASCADE NOT NULL,
+	PRIMARY KEY (list_id, item_id)
 );
 COMMIT;

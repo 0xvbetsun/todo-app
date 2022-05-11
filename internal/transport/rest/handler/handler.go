@@ -4,33 +4,38 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"go.uber.org/zap"
 )
 
 type Deps struct {
 	AuthService     AuthService
 	TodoListService TodoListService
 	TodoItemService TodoItemService
+	Log             *zap.Logger
 }
 
 type Handler struct {
 	Auth     *AuthHandler
 	TodoList *TodoListHandler
 	TodoItem *TodoItemHandler
+	log      *zap.Logger
 }
 
 func New(deps Deps) *Handler {
 	return &Handler{
-		Auth:     NewAuthHandler(deps.AuthService),
-		TodoList: NewTodoListHandler(deps.TodoListService),
-		TodoItem: NewTodoItemHandler(deps.TodoItemService),
+		Auth:     NewAuthHandler(deps.AuthService, deps.Log),
+		TodoList: NewTodoListHandler(deps.TodoListService, deps.Log),
+		TodoItem: NewTodoItemHandler(deps.TodoItemService, deps.Log),
+		log:      deps.Log,
 	}
 }
 
-func (h *Handler) InitRoutes() *chi.Mux {
+func (h *Handler) Routes() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(middleware.URLFormat)
-	r.Use(middleware.Recoverer)
+	r.Use(h.Logger())
+	r.Use(h.Recoverer)
+	r.Use(SendRequestID)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Mount("/auth", h.authRouter())
 	r.With(h.Auth.UserIdentity).Mount("/api", h.apiRouter())

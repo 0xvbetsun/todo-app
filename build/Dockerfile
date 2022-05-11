@@ -12,13 +12,13 @@ COPY . .
 # Set necessary environment variables needed 
 # for our image and build the api.
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build -ldflags="-s -w" -o api ./cmd/api/main.go
+RUN go build -ldflags="-s -w" -o server ./cmd/api/main.go
 
 FROM scratch
 
 # Copy binary and config files from /build 
 # to root folder of scratch container.
-COPY --from=builder ["/build/api", "/"]
+COPY --from=builder ["/build/server", "/"]
 
 # Command to run when starting the container.
-ENTRYPOINT ["/api"]
+ENTRYPOINT ["/server"]

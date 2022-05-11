@@ -1,3 +1,4 @@
+// Entry point for application's API
 package main
 
 import (
@@ -27,8 +28,12 @@ func main() {
 	if err := LoadConfig("configs"); err != nil {
 		logger.Fatal(fmt.Sprintf("can't read config: %v", err))
 	}
+	dbHost := viper.GetString("POSTGRES_HOST")
+	if dbHost == "" {
+		dbHost = viper.GetString("db.host")
+	}
 	db, err := psql.NewDB(psql.Config{
-		Host:     viper.GetString("db.host"),
+		Host:     dbHost,
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
 		DBName:   viper.GetString("db.dbname"),
@@ -49,12 +54,15 @@ func main() {
 		AuthService:     service.Auth,
 		TodoListService: service.TodoList,
 		TodoItemService: service.TodoItem,
+		Log:             logger,
 	})
 	srv := new(rest.Server)
-	port := viper.GetString("port")
-
+	port := viper.GetString("PORT")
+	if port == "" {
+		port = viper.GetString("port")
+	}
 	go func() {
-		if err := srv.Run(port, h.InitRoutes()); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.Run(port, h.Routes()); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal(fmt.Sprintf("can't start server on port %s, err: %v", port, err))
 		} else {
 			logger.Info("Server stopped gracefully")

@@ -19,3 +19,6 @@ migrate-up: ## Run migrations
 migrate-down: ## Rollback migrations
 	docker run -v $(PWD)/deployments/migrations:/migrations --network host migrate/migrate \
 	-path=/migrations/ -database postgres://postgres:$(POSTGRES_PASSWORD)@localhost:5434/postgres?sslmode=disable down -all
+
+gen-oas: ## Generate OpenAPI from Postman
+	p2o ./api/postman_collection.json -f ./api/oas.yml
