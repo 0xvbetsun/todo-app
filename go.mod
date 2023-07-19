@@ -3,7 +3,7 @@ module github.com/vbetsun/todo-app
 go 1.17
 
 require (
-	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/render v1.0.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
